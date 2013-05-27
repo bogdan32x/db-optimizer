@@ -1,6 +1,7 @@
 package ro.utcluj.service;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -9,6 +10,7 @@ import org.apache.log4j.Logger;
 
 import ro.utcluj.dto.TableDTO;
 import ro.utcluj.dto.TablePropDTO;
+import ro.utcluj.utils.validators.BracketBalancingStringValidator;
 
 public class InputParserServiceImpl {
 
@@ -16,7 +18,12 @@ public class InputParserServiceImpl {
 
 	private static final String	TABLE_DETECTION_REGEX	= "(?<=TABLE\\s)[\\w`\\s]+[(][\\w\\s``(),]+[)]";
 
-	public void parseSchema(final String initialSchema) {
+	/**
+	 * This method is used to parse the Table Schema in SQL format and extract relevant information from it.
+	 * 
+	 * @param initialSchema
+	 */
+	public void parseSchema(final StringBuilder initialSchema) {
 		final List<String> tableGroupsList = new ArrayList<String>();
 		final List<TableDTO> tableDtoList = new ArrayList<TableDTO>();
 
@@ -27,6 +34,12 @@ public class InputParserServiceImpl {
 		}
 
 		for (String tableGroup : tableGroupsList) {
+
+			if (!BracketBalancingStringValidator.isBalanced(tableGroup, "")) {
+				logger.error("Cannot validate given SQL group: " + tableGroup.trim());
+				continue;
+			}
+
 			final TableDTO tableDto = new TableDTO();
 			final int tableNameRightIndex = tableGroup.indexOf("`", 1);
 
@@ -48,12 +61,12 @@ public class InputParserServiceImpl {
 				if (tableField.contains("NOT NULL")) {
 					tableProp.setNullable(false);
 					tempString = tempString.substring(0, tempString.indexOf("NOT NULL")).trim();
-					InputParserServiceImpl.logger.info(tempString);
+					// InputParserServiceImpl.logger.info(tempString);
 				} else {
 					if (tableField.contains("NULL")) {
 						tableProp.setNullable(true);
 						tempString = tempString.substring(0, tempString.indexOf("NULL")).trim();
-						InputParserServiceImpl.logger.info(tempString);
+						// InputParserServiceImpl.logger.info(tempString);
 					}
 				}
 
@@ -63,7 +76,7 @@ public class InputParserServiceImpl {
 					tableProp.setPropType(tablePropFields[1]);
 					tablePropList.add(tableProp);
 				}
-				// InputParserServiceImpl.logger.info(tableField + "\n");
+				InputParserServiceImpl.logger.info(tableField + "\n");
 			}
 			tableDto.setTableProperties(tablePropList);
 
@@ -72,9 +85,16 @@ public class InputParserServiceImpl {
 		// return null;
 	}
 
+	/**
+	 * Method used for filtering strings from any unwanted characters and trimming them from extra spaces.
+	 * 
+	 * @param unfilteredString
+	 * @return
+	 */
 	private String filterString(final String unfilteredString) {
 		final String filteredString = unfilteredString.replaceAll("[^a-zA-Z0-9_]+", "").trim();
 		InputParserServiceImpl.logger.info(filteredString);
 		return filteredString;
 	}
+
 }

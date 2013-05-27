@@ -24,7 +24,7 @@ public class ApplicationController {
 	}
 
 	@RequestMapping(value = "/home.do", method = RequestMethod.POST)
-	public String showAllGreetings(@RequestParam(value = "schemaText", required = true) final String schemaText,
+	public String showAllGreetings(@RequestParam(value = "schemaText", required = true) final StringBuilder schemaText,
 			final Map<String, Object> model) {
 		ApplicationController.logger.info("entering showAllGreetings");
 		model.put("schemaText", schemaText);

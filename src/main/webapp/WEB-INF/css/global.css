@@ -1,0 +1,23 @@
+.container {
+	
+}
+
+.header {
+	float: left;
+	display: block;
+	width: 100%;
+	text-align: center;
+}
+
+.menu-left {
+	
+}
+
+.content {
+	
+}
+
+#greetingMessage {
+	width: 50%;
+	text-align: center;
+}
