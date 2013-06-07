@@ -75,8 +75,9 @@ public class InputParserServiceImpl {
 					tableProp.setPropName(this.filterString(tablePropFields[0]));
 					tableProp.setPropType(tablePropFields[1]);
 					tablePropList.add(tableProp);
+					logger.info(tableProp);
 				}
-				InputParserServiceImpl.logger.info(tableField + "\n");
+				// InputParserServiceImpl.logger.info(tableField + "\n");
 			}
 			tableDto.setTableProperties(tablePropList);
 
@@ -93,7 +94,7 @@ public class InputParserServiceImpl {
 	 */
 	private String filterString(final String unfilteredString) {
 		final String filteredString = unfilteredString.replaceAll("[^a-zA-Z0-9_]+", "").trim();
-		InputParserServiceImpl.logger.info(filteredString);
+		// InputParserServiceImpl.logger.info(filteredString);
 		return filteredString;
 	}
 
