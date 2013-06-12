@@ -1,34 +1,35 @@
 package ro.utcluj.service;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
-import ro.utcluj.dto.TableDTO;
-import ro.utcluj.dto.TablePropDTO;
+import ro.utcluj.dto.Table;
+import ro.utcluj.dto.TableProp;
 import ro.utcluj.utils.validators.BracketBalancingStringValidator;
 
-public class InputParserServiceImpl {
+public class SchemaParserUtils {
 
-	protected static Logger		logger					= Logger.getLogger(InputParserServiceImpl.class);
+	protected static Logger		logger					= Logger.getLogger(SchemaParserUtils.class);
 
-	private static final String	TABLE_DETECTION_REGEX	= "(?<=TABLE\\s)[\\w`\\s]+[(][\\w\\s``(),]+[)]";
+	// private static final String TABLE_DETECTION_REGEX = "(?<=TABLE\\s)[\\w`\\s]+[(][\\w\\s``(),]+[)]";
+	private static final String	TABLE_DETECTION_REGEX	= "(?<=TABLE\\s)[\\w`\\s]+[\\w\\s`(),'.-:-\\[\\]]+[)]";
 
 	/**
 	 * This method is used to parse the Table Schema in SQL format and extract relevant information from it.
 	 * 
-	 * @param initialSchema
+	 * @param string
+	 * @param fileName
 	 */
-	public void parseSchema(final StringBuilder initialSchema) {
+	public static List<Table> parseSchema(final String string, String fileName) {
 		final List<String> tableGroupsList = new ArrayList<String>();
-		final List<TableDTO> tableDtoList = new ArrayList<TableDTO>();
+		final List<Table> tableDtoList = new ArrayList<Table>();
 
-		final Pattern p = Pattern.compile(InputParserServiceImpl.TABLE_DETECTION_REGEX, Pattern.MULTILINE);
-		final Matcher m = p.matcher(initialSchema);
+		final Pattern p = Pattern.compile(SchemaParserUtils.TABLE_DETECTION_REGEX, Pattern.MULTILINE);
+		final Matcher m = p.matcher(string);
 		while (m.find()) {
 			tableGroupsList.add(m.group());
 		}
@@ -40,8 +41,11 @@ public class InputParserServiceImpl {
 				continue;
 			}
 
-			final TableDTO tableDto = new TableDTO();
-			final int tableNameRightIndex = tableGroup.indexOf("`", 1);
+			final Table tableDto = new Table();
+			int tableNameRightIndex = tableGroup.indexOf("`", 1);
+			if (tableNameRightIndex == -1) {
+				tableNameRightIndex = 1;
+			}
 
 			final String tableName = tableGroup.substring(1, tableNameRightIndex);
 			tableDto.setTableName(tableName);
@@ -53,9 +57,9 @@ public class InputParserServiceImpl {
 
 			final String[] tableProperties = tableGroup.split(",");
 
-			final List<TablePropDTO> tablePropList = new ArrayList<TablePropDTO>();
+			final List<TableProp> tablePropList = new ArrayList<TableProp>();
 			for (final String tableField : tableProperties) {
-				final TablePropDTO tableProp = new TablePropDTO();
+				final TableProp tableProp = new TableProp();
 				String tempString = tableField;
 
 				if (tableField.contains("NOT NULL")) {
@@ -72,7 +76,7 @@ public class InputParserServiceImpl {
 
 				final String[] tablePropFields = tempString.split("[\\s]+");
 				if (tablePropFields.length == 2) {
-					tableProp.setPropName(this.filterString(tablePropFields[0]));
+					tableProp.setPropName(filterString(tablePropFields[0]));
 					tableProp.setPropType(tablePropFields[1]);
 					tablePropList.add(tableProp);
 					logger.info(tableProp);
@@ -80,10 +84,13 @@ public class InputParserServiceImpl {
 				// InputParserServiceImpl.logger.info(tableField + "\n");
 			}
 			tableDto.setTableProperties(tablePropList);
-
+			tableDto.setTableName(fileName);
+			if (tablePropList.size() > 0) {
+				tableDtoList.add(tableDto);
+			}
 			// InputParserServiceImpl.logger.info(tableDto.toString());
 		}
-		// return null;
+		return tableDtoList;
 	}
 
 	/**
@@ -92,7 +99,7 @@ public class InputParserServiceImpl {
 	 * @param unfilteredString
 	 * @return
 	 */
-	private String filterString(final String unfilteredString) {
+	private static String filterString(final String unfilteredString) {
 		final String filteredString = unfilteredString.replaceAll("[^a-zA-Z0-9_]+", "").trim();
 		// InputParserServiceImpl.logger.info(filteredString);
 		return filteredString;

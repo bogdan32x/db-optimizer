@@ -1,11 +1,19 @@
 package ro.utcluj.dto;
 
-public class TablePropDTO {
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
+@Document(collection = "tableProp")
+public class TableProp {
+
+	@Field(value = "pn")
 	private String	propName;
 
+	@Field(value = "pt")
 	private String	propType;
 
+	@Field(value = "in")
 	private boolean	isNullable;
 
 	public String getPropName() {
@@ -36,4 +44,5 @@ public class TablePropDTO {
 	public String toString() {
 		return this.propName + " " + this.propType + " " + this.isNullable;
 	}
+
 }

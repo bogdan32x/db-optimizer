@@ -8,13 +8,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import ro.utcluj.service.InputParserServiceImpl;
+import ro.utcluj.service.SchemaParserUtils;
 
 @Controller
 @RequestMapping("/home")
 public class ApplicationController {
 
-	InputParserServiceImpl	parserService	= new InputParserServiceImpl();
+	SchemaParserUtils		parserService	= new SchemaParserUtils();
 
 	protected static Logger	logger			= Logger.getLogger("GreetingController");
 
@@ -24,12 +24,12 @@ public class ApplicationController {
 	}
 
 	@RequestMapping(value = "/home.do", method = RequestMethod.POST)
-	public String showAllGreetings(@RequestParam(value = "schemaText", required = true) final StringBuilder schemaText,
+	public String showAllGreetings(@RequestParam(value = "schemaText", required = true) final String schemaText,
 			final Map<String, Object> model) {
 		ApplicationController.logger.info("entering showAllGreetings");
 		model.put("schemaText", schemaText);
 
-		this.parserService.parseSchema(schemaText);
+		this.parserService.parseSchema(schemaText, "");
 		// This will resolve to /WEB-INF/jsp/home.jsp
 		return "home";
 	}
