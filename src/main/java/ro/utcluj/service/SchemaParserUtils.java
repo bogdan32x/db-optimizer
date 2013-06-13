@@ -9,6 +9,7 @@ import org.apache.log4j.Logger;
 
 import ro.utcluj.dto.Table;
 import ro.utcluj.dto.TableProp;
+import ro.utcluj.utils.string.Splitter;
 import ro.utcluj.utils.validators.BracketBalancingStringValidator;
 
 public class SchemaParserUtils {
@@ -16,7 +17,10 @@ public class SchemaParserUtils {
 	protected static Logger		logger					= Logger.getLogger(SchemaParserUtils.class);
 
 	// private static final String TABLE_DETECTION_REGEX = "(?<=TABLE\\s)[\\w`\\s]+[(][\\w\\s``(),]+[)]";
-	private static final String	TABLE_DETECTION_REGEX	= "(?<=TABLE\\s)[\\w`\\s]+[\\w\\s`(),'.-:-\\[\\]]+[)]";
+	private static final String	TABLE_DETECTION_REGEX	= "(?<=CREATE TABLE\\s)[\\w`\\s]+[\\w\\s`(),'.-:-\\[\\]]+[)]";
+
+	// private static final String TABLE_DETECTION_REGEX =
+	// "(?:CREATE|TABLE|IF|NOT|EXISTS)[\\w`\\s]+[\\w\\s`(),'.-:-\\[\\]]+[)]";
 
 	/**
 	 * This method is used to parse the Table Schema in SQL format and extract relevant information from it.
@@ -31,8 +35,13 @@ public class SchemaParserUtils {
 		final Pattern p = Pattern.compile(SchemaParserUtils.TABLE_DETECTION_REGEX, Pattern.MULTILINE);
 		final Matcher m = p.matcher(string);
 		while (m.find()) {
-			tableGroupsList.add(m.group());
+			String matchedTable = m.group();
+			matchedTable = matchedTable.replace("IF NOT EXISTS", "");
+			tableGroupsList.add(matchedTable.trim());
+			// logger.error(matchedTable);
 		}
+
+		logger.error(tableGroupsList.size() + " " + fileName);
 
 		for (String tableGroup : tableGroupsList) {
 
@@ -44,23 +53,25 @@ public class SchemaParserUtils {
 			final Table tableDto = new Table();
 			int tableNameRightIndex = tableGroup.indexOf("`", 1);
 			if (tableNameRightIndex == -1) {
-				tableNameRightIndex = 1;
+				// tableNameRightIndex = 1;
+				tableNameRightIndex = tableGroup.indexOf("(", 1) - 1;
 			}
 
 			final String tableName = tableGroup.substring(1, tableNameRightIndex);
-			tableDto.setTableName(tableName);
+			tableDto.setTableName(tableName.trim());
 
 			tableGroup = tableGroup.substring(tableNameRightIndex + 1).trim();
 			tableGroup = tableGroup.replaceFirst("[(]", "");
 			final int endChar = tableGroup.lastIndexOf(")");
 			tableGroup = tableGroup.substring(0, endChar - 1).trim();
 
-			final String[] tableProperties = tableGroup.split(",");
+			Pattern splitPattern = Pattern.compile(",$", Pattern.MULTILINE);
+			final String[] tableProperties = splitPattern.split(tableGroup);
 
 			final List<TableProp> tablePropList = new ArrayList<TableProp>();
 			for (final String tableField : tableProperties) {
 				final TableProp tableProp = new TableProp();
-				String tempString = tableField;
+				String tempString = tableField.trim();
 
 				if (tableField.contains("NOT NULL")) {
 					tableProp.setNullable(false);
@@ -75,16 +86,19 @@ public class SchemaParserUtils {
 				}
 
 				final String[] tablePropFields = tempString.split("[\\s]+");
-				if (tablePropFields.length == 2) {
-					tableProp.setPropName(filterString(tablePropFields[0]));
-					tableProp.setPropType(tablePropFields[1]);
-					tablePropList.add(tableProp);
-					logger.info(tableProp);
+				if (tablePropFields.length >= 2) {
+					if (!tablePropFields[0].equals("KEY") && !tablePropFields[0].equals("PRIMARY")) {
+						tableProp.setPropName(filterString(tablePropFields[0]));
+						tableProp.setPropType(tablePropFields[1]);
+						tablePropList.add(tableProp);
+						logger.info(tableProp);
+					}
+
 				}
 				// InputParserServiceImpl.logger.info(tableField + "\n");
 			}
 			tableDto.setTableProperties(tablePropList);
-			tableDto.setTableName(fileName);
+			tableDto.setSchemaName(fileName);
 			if (tablePropList.size() > 0) {
 				tableDtoList.add(tableDto);
 			}

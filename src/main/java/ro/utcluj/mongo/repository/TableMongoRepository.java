@@ -23,7 +23,7 @@ public class TableMongoRepository {
 
 	public void saveAll(List<Table> processedTables) {
 		for (Table t : processedTables) {
-			logger.info(t);
+			// logger.info(t);
 			mongoTemplate.save(t);
 		}
 	}
