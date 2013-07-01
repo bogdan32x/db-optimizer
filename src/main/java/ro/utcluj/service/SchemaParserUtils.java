@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 import ro.utcluj.dto.SchemaDetails;
 import ro.utcluj.dto.Table;
 import ro.utcluj.dto.TableProp;
+import ro.utcluj.utils.validators.BracketBalancingStringValidator;
 
 public class SchemaParserUtils {
 
@@ -47,10 +48,10 @@ public class SchemaParserUtils {
 		long validTables = 0;
 		for (String tableGroup : tableGroupsList) {
 
-			// if (!BracketBalancingStringValidator.isBalanced(tableGroup)) {
-			// logger.error("Cannot validate given SQL group: " + tableGroup.trim());
-			// continue;
-			// }
+			if (!BracketBalancingStringValidator.isBalanced(tableGroup)) {
+				logger.error("Cannot validate given SQL group: " + tableGroup.trim());
+				continue;
+			}
 
 			validTables++;
 			final Table tableDto = new Table();
@@ -88,7 +89,8 @@ public class SchemaParserUtils {
 
 				final List<String> tablePropFields = Arrays.asList(tempString.split("[\\s]+"));
 				if (tablePropFields.size() >= 2) {
-					if (!tablePropFields.get(0).equals("KEY") && !tablePropFields.get(0).equals("PRIMARY")) {
+					if (!tablePropFields.get(0).equals("KEY") && !tablePropFields.get(0).equals("PRIMARY")
+							&& !tablePropFields.get(0).equals("UNIQUE")) {
 						tableProp.setPropName(filterString(tablePropFields.get(0)));
 						tableProp.setPropType(tablePropFields.get(1));
 						tablePropList.add(tableProp);

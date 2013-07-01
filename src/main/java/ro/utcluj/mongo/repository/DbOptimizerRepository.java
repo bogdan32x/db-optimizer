@@ -5,6 +5,8 @@ import java.util.List;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 
@@ -35,4 +37,15 @@ public class DbOptimizerRepository {
 		}
 	}
 
+	public List<Table> getAllTables() {
+
+		Query q = new Query();
+		q.addCriteria(Criteria.where("tp").not().size(0));
+		List<Table> tl = mongoTemplate.find(q, Table.class);
+		if (tl.size() <= 0) {
+			logger.error("Ceeeeeeeee?");
+		}
+		return tl;
+
+	}
 }

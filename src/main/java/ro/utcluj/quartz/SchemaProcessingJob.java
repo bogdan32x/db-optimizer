@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 
 import ro.utcluj.dto.SchemaDetails;
 import ro.utcluj.dto.Table;
+import ro.utcluj.mining.DataMiner;
 import ro.utcluj.mongo.repository.DbOptimizerRepository;
 import ro.utcluj.service.SchemaParserUtils;
 
@@ -71,41 +72,52 @@ public class SchemaProcessingJob {
 			while (true) {
 				try {
 					log.debug("Waiting for 60 seconds...");
-					Thread.sleep(60000);
 					log.debug("Starting processing...");
 
-					File rawFolder = new File("d:/rawSql");
+					final File rawFolder = new File("d:/rawSql");
 					final File processedFolder = new File("d:/processedSql");
+					// DataMiner.mineData();
 
-					if (rawFolder.exists()) {
-						for (final File rawSqlFile : rawFolder.listFiles()) {
-							if (rawSqlFile.exists() && rawSqlFile.isFile() && rawSqlFile.canRead()) {
-								new Thread(new Runnable() {
-
-									public void run() {
-										log.error("Reading file..." + rawSqlFile.getName());
-										SchemaDetails schema = new SchemaDetails();
-										List<Table> processedTables = SchemaParserUtils.parseSchema(readFile(rawSqlFile), rawSqlFile.getName(), schema);
-										dbOptimizerRepository.saveAllTables(processedTables);
-										dbOptimizerRepository.saveSchemaDetails(schema);
-										log.error("Processed file..." + rawSqlFile.getName() + " tables found:"
-												+ processedTables.size());
-
-										String newFilePath = rawSqlFile.getName();
-										File newFile = new File(processedFolder, newFilePath);
-
-										try {
-											FileUtils.moveFile(rawSqlFile, newFile);
-										} catch (IOException e) {
-											log.error(e.getMessage(), e);
-										}
-										System.gc();
-									}
-								}).start();
-							}
-						}
-
+					List<Table> tl = dbOptimizerRepository.getAllTables();
+					for (Table t : tl) {
+					//	log.info(tl);
+					String tableName = t.getTableName();
+					
+					
+					
 					}
+
+					Thread.sleep(60000);
+					// if (rawFolder.exists()) {
+					// for (final File rawSqlFile : rawFolder.listFiles()) {
+					// if (rawSqlFile.exists() && rawSqlFile.isFile() && rawSqlFile.canRead()) {
+					// new Thread(new Runnable() {
+					//
+					// public void run() {
+					// log.error("Reading file..." + rawSqlFile.getName());
+					// SchemaDetails schema = new SchemaDetails();
+					// List<Table> processedTables = SchemaParserUtils.parseSchema(readFile(rawSqlFile),
+					// rawSqlFile.getName(), schema);
+					// dbOptimizerRepository.saveAllTables(processedTables);
+					// dbOptimizerRepository.saveSchemaDetails(schema);
+					// log.error("Processed file..." + rawSqlFile.getName() + " tables found:"
+					// + processedTables.size());
+					//
+					// String newFilePath = rawSqlFile.getName();
+					// File newFile = new File(processedFolder, newFilePath);
+					//
+					// try {
+					// FileUtils.moveFile(rawSqlFile, newFile);
+					// } catch (IOException e) {
+					// log.error(e.getMessage(), e);
+					// }
+					// System.gc();
+					// }
+					// }).start();
+					// }
+					// }
+
+					// }
 
 				} catch (Exception e) {
 					log.error(e.getClass() + ": " + e.getMessage(), e);

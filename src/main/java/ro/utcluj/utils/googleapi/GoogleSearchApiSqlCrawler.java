@@ -45,12 +45,14 @@ public class GoogleSearchApiSqlCrawler {
 				String totalResults = output.substring(output.indexOf("\"totalResults\": \"")
 						+ ("\"totalResults\": \"").length(), output.indexOf("\","));
 				maxCounter = Integer.valueOf(totalResults);
+				System.out.println("Numarul total de rezultate al interogarii: " + totalResults);
 			}
 
 			if (output.contains("\"link\": \"")) {
 				final String link = output.substring(output.indexOf("\"link\": \"") + ("\"link\": \"").length(),
 						output.indexOf("\","));
 				UrlDownload.fileDownload(link, GoogleSearchApiSqlCrawler.destinationDir);
+				System.out.println("Download cu succes pentru link-ul: " + link);
 			}
 		}
 		conn.disconnect();
