@@ -18,7 +18,7 @@ public class SchedulerServlet extends HttpServlet {
 
 		try {
 			log.info("Initializing NewsLetter PlugIn");
-			JobScheduler js = new JobScheduler();
+			// JobScheduler js = new JobScheduler();
 
 		} catch (Exception e) {
 			log.error(e.getClass() + ": " + e.getMessage(), e);

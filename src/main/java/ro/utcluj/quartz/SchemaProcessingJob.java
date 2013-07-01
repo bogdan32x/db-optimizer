@@ -15,8 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 
+import ro.utcluj.dto.SchemaDetails;
 import ro.utcluj.dto.Table;
-import ro.utcluj.mongo.repository.TableMongoRepository;
+import ro.utcluj.mongo.repository.DbOptimizerRepository;
 import ro.utcluj.service.SchemaParserUtils;
 
 @Component
@@ -24,7 +25,7 @@ import ro.utcluj.service.SchemaParserUtils;
 public class SchemaProcessingJob {
 
 	@Autowired
-	TableMongoRepository	tableMongoRepository;
+	DbOptimizerRepository	dbOptimizerRepository;
 
 	Logger					log	= Logger.getLogger(SchemaProcessingJob.class);
 
@@ -33,8 +34,7 @@ public class SchemaProcessingJob {
 		new Thread(new InnerJob()).start();
 	}
 
-	@SuppressWarnings("resource")
-	private String readFile(File file) {
+	private StringBuilder readFile(File file) {
 		BufferedReader reader;
 		String line = null;
 		StringBuilder stringBuilder = new StringBuilder();
@@ -54,15 +54,15 @@ public class SchemaProcessingJob {
 			log.error(e.getClass() + ": " + e.getMessage(), e);
 		}
 
-		return stringBuilder.toString();
+		return stringBuilder;
 	}
 
-	public TableMongoRepository getMongoRep() {
-		return tableMongoRepository;
+	public DbOptimizerRepository getMongoRep() {
+		return dbOptimizerRepository;
 	}
 
-	public void setMongoRep(TableMongoRepository tableMongoRepository) {
-		this.tableMongoRepository = tableMongoRepository;
+	public void setMongoRep(DbOptimizerRepository tableMongoRepository) {
+		this.dbOptimizerRepository = tableMongoRepository;
 	}
 
 	class InnerJob implements Runnable {
@@ -75,26 +75,33 @@ public class SchemaProcessingJob {
 					log.debug("Starting processing...");
 
 					File rawFolder = new File("d:/rawSql");
-					File processedFolder = new File("d:/processedSql");
+					final File processedFolder = new File("d:/processedSql");
 
 					if (rawFolder.exists()) {
-						for (File rawSqlFile : rawFolder.listFiles()) {
+						for (final File rawSqlFile : rawFolder.listFiles()) {
 							if (rawSqlFile.exists() && rawSqlFile.isFile() && rawSqlFile.canRead()) {
-								log.error("Reading file..." + rawSqlFile.getName());
-								List<Table> processedTables = SchemaParserUtils.parseSchema(readFile(rawSqlFile),
-										rawSqlFile.getName());
-								tableMongoRepository.saveAll(processedTables);
-								log.error("Processed file..." + rawSqlFile.getName() + " tables found:"
-										+ processedTables.size());
+								new Thread(new Runnable() {
 
-								String newFilePath = rawSqlFile.getName();
-								File newFile = new File(processedFolder, newFilePath);
+									public void run() {
+										log.error("Reading file..." + rawSqlFile.getName());
+										SchemaDetails schema = new SchemaDetails();
+										List<Table> processedTables = SchemaParserUtils.parseSchema(readFile(rawSqlFile), rawSqlFile.getName(), schema);
+										dbOptimizerRepository.saveAllTables(processedTables);
+										dbOptimizerRepository.saveSchemaDetails(schema);
+										log.error("Processed file..." + rawSqlFile.getName() + " tables found:"
+												+ processedTables.size());
 
-								try {
-									FileUtils.moveFile(rawSqlFile, newFile);
-								} catch (IOException e) {
-									log.error(e.getMessage(), e);
-								}
+										String newFilePath = rawSqlFile.getName();
+										File newFile = new File(processedFolder, newFilePath);
+
+										try {
+											FileUtils.moveFile(rawSqlFile, newFile);
+										} catch (IOException e) {
+											log.error(e.getMessage(), e);
+										}
+										System.gc();
+									}
+								}).start();
 							}
 						}
 

@@ -14,7 +14,8 @@ public class GoogleSearchApiSqlCrawler {
 		List<String> linkList = new ArrayList<String>();
 
 		try {
-			initCustomGoogleSearch(linkList, 1, 0);
+			initCustomGoogleSearch(linkList, 1, -1);
+			System.out.println(linkList.toString());
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (InterruptedException e) {
@@ -25,53 +26,52 @@ public class GoogleSearchApiSqlCrawler {
 	public static void initCustomGoogleSearch(List<String> sqlList, int startCounter, int maxCounter)
 			throws IOException, InterruptedException {
 
-		do {
+		System.out.println(startCounter + " " + maxCounter);
+		String google = "https://www.googleapis.com/customsearch/v1?";
+		String key = "key=AIzaSyAvg5BlLiBzUdY8dXxrC3csJTTe8h8Zkic";
+		String query = "&q=filetype:sql";
+		String cx = "&cx=003791357122038516471%3A4n8gyxqmgzu";
+		String start = "&start=" + startCounter;
 
-			String google = "https://www.googleapis.com/customsearch/v1?";
-			String key = "key=AIzaSyAvg5BlLiBzUdY8dXxrC3csJTTe8h8Zkic";
-			String query = "&q=filetype:sql";
-			String cx = "&cx=003791357122038516471%3A4n8gyxqmgzu";
-			String start = "&start=" + startCounter;
+		URL url = new URL(google + key + cx + query + start);
+		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+		conn.setRequestMethod("GET");
+		conn.setRequestProperty("Accept", "application/json");
 
-			URL url = new URL(google + key + cx + query + start);
-			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-			conn.setRequestMethod("GET");
-			conn.setRequestProperty("Accept", "application/json");
+		BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+		System.out.println("Output from Server .... \n");
 
-			BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+		String output;
+		while ((output = br.readLine()) != null) {
 
-			String output;
-			System.out.println("Output from Server .... \n");
-			while ((output = br.readLine()) != null) {
-
-				if (output.contains("\"totalResults\": ")) {
-					String totalResults = output.substring(output.indexOf("\"totalResults\": \"")
-							+ ("\"totalResults\": \"").length(), output.indexOf("\","));
-					maxCounter = Integer.valueOf(totalResults);
-					System.out.println(maxCounter);
-				}
-
-				if (output.contains("\"link\": \"")) {
-					String link = output.substring(output.indexOf("\"link\": \"") + ("\"link\": \"").length(),
-							output.indexOf("\","));
-					sqlList.add(link); // Will print the google search links
-					//System.out.println(link);
-				}
+			if (output.contains("\"totalResults\": ")) {
+				String totalResults = output.substring(output.indexOf("\"totalResults\": \"")
+						+ ("\"totalResults\": \"").length(), output.indexOf("\","));
+				maxCounter = Integer.valueOf(totalResults);
 			}
-			conn.disconnect();
-			startCounter += 10;
-			System.out.println(startCounter + " " + maxCounter + " " + sqlList.size());
-			// Reader reader = new InputStreamReader(conn.getInputStream());
-			// GoogleResults results = new Gson().fromJson(reader, GoogleResults.class);
-			//
-			// // Show title and URL of 1st result.
-			// System.out.println(results);
-			// System.out.println(results.getResponseData());
-			// // System.out.println(results.getResponseData().getResults().get(0).getUrl());
-			// System.out.println(url.getQuery());
+
+			if (output.contains("\"link\": \"")) {
+				String link = output.substring(output.indexOf("\"link\": \"") + ("\"link\": \"").length(),
+						output.indexOf("\","));
+				sqlList.add(link); // Will add the google search links
+			}
+		}
+		conn.disconnect();
+		startCounter += 10;
+		// System.out.println(startCounter + " " + maxCounter + " " + sqlList.size());
+		// Reader reader = new InputStreamReader(conn.getInputStream());
+		// GoogleResults results = new Gson().fromJson(reader, GoogleResults.class);
+		//
+		// // Show title and URL of 1st result.
+		// System.out.println(results);
+		// System.out.println(results.getResponseData());
+		// // System.out.println(results.getResponseData().getResults().get(0).getUrl());
+		// System.out.println(url.getQuery());
+		Thread.sleep(1000);
+
+		if (startCounter < maxCounter || maxCounter == -1) {
 			initCustomGoogleSearch(sqlList, startCounter, maxCounter);
-			Thread.sleep(1000);
-		} while (startCounter < maxCounter);
+		}
 	}
 
 }

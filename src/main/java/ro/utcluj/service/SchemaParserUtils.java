@@ -1,16 +1,17 @@
 package ro.utcluj.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
+import ro.utcluj.dto.SchemaDetails;
 import ro.utcluj.dto.Table;
 import ro.utcluj.dto.TableProp;
-import ro.utcluj.utils.string.Splitter;
-import ro.utcluj.utils.validators.BracketBalancingStringValidator;
 
 public class SchemaParserUtils {
 
@@ -25,48 +26,50 @@ public class SchemaParserUtils {
 	/**
 	 * This method is used to parse the Table Schema in SQL format and extract relevant information from it.
 	 * 
-	 * @param string
+	 * @param cachedString
 	 * @param fileName
 	 */
-	public static List<Table> parseSchema(final String string, String fileName) {
+	public static List<Table> parseSchema(final StringBuilder cachedString, String fileName, SchemaDetails schema) {
 		final List<String> tableGroupsList = new ArrayList<String>();
 		final List<Table> tableDtoList = new ArrayList<Table>();
-
 		final Pattern p = Pattern.compile(SchemaParserUtils.TABLE_DETECTION_REGEX, Pattern.MULTILINE);
-		final Matcher m = p.matcher(string);
+		final Matcher m = p.matcher(cachedString);
 		while (m.find()) {
 			String matchedTable = m.group();
 			matchedTable = matchedTable.replace("IF NOT EXISTS", "");
 			tableGroupsList.add(matchedTable.trim());
-			// logger.error(matchedTable);
+			matchedTable = null;
 		}
 
-		logger.error(tableGroupsList.size() + " " + fileName);
-
+		schema.setCreationDate(new Date());
+		schema.setTotalTables(tableGroupsList.size());
+		schema.setSchemaName(fileName);
+		long validTables = 0;
 		for (String tableGroup : tableGroupsList) {
 
-			if (!BracketBalancingStringValidator.isBalanced(tableGroup, "")) {
-				logger.error("Cannot validate given SQL group: " + tableGroup.trim());
-				continue;
-			}
+			// if (!BracketBalancingStringValidator.isBalanced(tableGroup)) {
+			// logger.error("Cannot validate given SQL group: " + tableGroup.trim());
+			// continue;
+			// }
 
+			validTables++;
 			final Table tableDto = new Table();
-			int tableNameRightIndex = tableGroup.indexOf("`", 1);
-			if (tableNameRightIndex == -1) {
-				// tableNameRightIndex = 1;
-				tableNameRightIndex = tableGroup.indexOf("(", 1) - 1;
-			}
+			int tableNameRightIndex = tableGroup.indexOf("(", 1);
 
-			final String tableName = tableGroup.substring(1, tableNameRightIndex);
+			String tableName = new String(tableGroup.substring(0, tableNameRightIndex));
+			if (tableName.contains(".")) {
+				tableName = new String(tableName.split("\\.")[1]);
+			}
+			tableName = tableName.replaceAll("`", "");
 			tableDto.setTableName(tableName.trim());
 
-			tableGroup = tableGroup.substring(tableNameRightIndex + 1).trim();
+			tableGroup = new String(tableGroup.substring(tableNameRightIndex + 1));
 			tableGroup = tableGroup.replaceFirst("[(]", "");
 			final int endChar = tableGroup.lastIndexOf(")");
-			tableGroup = tableGroup.substring(0, endChar - 1).trim();
+			tableGroup = new String(tableGroup.substring(0, endChar - 1));
 
 			Pattern splitPattern = Pattern.compile(",$", Pattern.MULTILINE);
-			final String[] tableProperties = splitPattern.split(tableGroup);
+			final List<String> tableProperties = Arrays.asList(splitPattern.split(tableGroup));
 
 			final List<TableProp> tablePropList = new ArrayList<TableProp>();
 			for (final String tableField : tableProperties) {
@@ -75,35 +78,33 @@ public class SchemaParserUtils {
 
 				if (tableField.contains("NOT NULL")) {
 					tableProp.setNullable(false);
-					tempString = tempString.substring(0, tempString.indexOf("NOT NULL")).trim();
-					// InputParserServiceImpl.logger.info(tempString);
+					tempString = new String(tempString.substring(0, tempString.indexOf("NOT NULL")));
 				} else {
 					if (tableField.contains("NULL")) {
 						tableProp.setNullable(true);
-						tempString = tempString.substring(0, tempString.indexOf("NULL")).trim();
-						// InputParserServiceImpl.logger.info(tempString);
+						tempString = new String(tempString.substring(0, tempString.indexOf("NULL")));
 					}
 				}
 
-				final String[] tablePropFields = tempString.split("[\\s]+");
-				if (tablePropFields.length >= 2) {
-					if (!tablePropFields[0].equals("KEY") && !tablePropFields[0].equals("PRIMARY")) {
-						tableProp.setPropName(filterString(tablePropFields[0]));
-						tableProp.setPropType(tablePropFields[1]);
+				final List<String> tablePropFields = Arrays.asList(tempString.split("[\\s]+"));
+				if (tablePropFields.size() >= 2) {
+					if (!tablePropFields.get(0).equals("KEY") && !tablePropFields.get(0).equals("PRIMARY")) {
+						tableProp.setPropName(filterString(tablePropFields.get(0)));
+						tableProp.setPropType(tablePropFields.get(1));
 						tablePropList.add(tableProp);
 						logger.info(tableProp);
 					}
 
 				}
-				// InputParserServiceImpl.logger.info(tableField + "\n");
 			}
 			tableDto.setTableProperties(tablePropList);
 			tableDto.setSchemaName(fileName);
 			if (tablePropList.size() > 0) {
 				tableDtoList.add(tableDto);
 			}
-			// InputParserServiceImpl.logger.info(tableDto.toString());
 		}
+		schema.setParsedTables(validTables);
+		System.gc();
 		return tableDtoList;
 	}
 
@@ -115,7 +116,6 @@ public class SchemaParserUtils {
 	 */
 	private static String filterString(final String unfilteredString) {
 		final String filteredString = unfilteredString.replaceAll("[^a-zA-Z0-9_]+", "").trim();
-		// InputParserServiceImpl.logger.info(filteredString);
 		return filteredString;
 	}
 

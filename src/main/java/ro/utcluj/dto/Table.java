@@ -1,5 +1,6 @@
 package ro.utcluj.dto;
 
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.data.annotation.Id;
@@ -21,6 +22,17 @@ public class Table {
 	@Field(value = "sn")
 	private String			schemaName;
 
+	@Field(value = "cd")
+	private Date			creationDate;
+
+	public Date getCreationDate() {
+		return creationDate;
+	}
+
+	public void setCreationDate(Date creationDate) {
+		this.creationDate = creationDate;
+	}
+
 	public String getTableName() {
 		return this.tableName;
 	}
@@ -35,17 +47,6 @@ public class Table {
 
 	public void setTableName(final String tableName) {
 		this.tableName = tableName;
-	}
-
-	@Override
-	public String toString() {
-		final StringBuffer sb = new StringBuffer();
-		sb.append(this.tableName + " ");
-		for (final TableProp tab : this.tableProperties) {
-			sb.append(tab.toString());
-		}
-
-		return sb.toString();
 	}
 
 	public String getId() {
@@ -63,4 +64,16 @@ public class Table {
 	public void setSchemaName(String schemaName) {
 		this.schemaName = schemaName;
 	}
+
+	@Override
+	public String toString() {
+		final StringBuffer sb = new StringBuffer();
+		sb.append(this.tableName + " ");
+		for (final TableProp tab : this.tableProperties) {
+			sb.append(tab.toString());
+		}
+
+		return sb.toString();
+	}
+
 }

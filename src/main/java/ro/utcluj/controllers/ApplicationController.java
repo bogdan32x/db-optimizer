@@ -14,9 +14,9 @@ import ro.utcluj.service.SchemaParserUtils;
 @RequestMapping("/home")
 public class ApplicationController {
 
-	SchemaParserUtils		parserService	= new SchemaParserUtils();
+	// SchemaParserUtils parserService = new SchemaParserUtils();
 
-	protected static Logger	logger			= Logger.getLogger("GreetingController");
+	protected static Logger	logger	= Logger.getLogger("GreetingController");
 
 	@RequestMapping(value = "/index.do", method = RequestMethod.GET)
 	public String getMainPage() {
@@ -29,7 +29,7 @@ public class ApplicationController {
 		ApplicationController.logger.info("entering showAllGreetings");
 		model.put("schemaText", schemaText);
 
-		this.parserService.parseSchema(schemaText, "");
+		// SchemaParserUtils.parseSchema(schemaText, "");
 		// This will resolve to /WEB-INF/jsp/home.jsp
 		return "home";
 	}

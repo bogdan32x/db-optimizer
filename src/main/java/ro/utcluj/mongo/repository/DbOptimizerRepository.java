@@ -8,23 +8,31 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 
+import ro.utcluj.dto.SchemaDetails;
 import ro.utcluj.dto.Table;
 
 @Repository
 @Component
-public class TableMongoRepository {
+public class DbOptimizerRepository {
 
 	@Autowired
 	MongoTemplate	mongoTemplate;
 
-	Logger			logger	= Logger.getLogger(TableMongoRepository.class);
+	Logger			logger	= Logger.getLogger(DbOptimizerRepository.class);
 
-	public TableMongoRepository() {}
+	public DbOptimizerRepository() {}
 
-	public void saveAll(List<Table> processedTables) {
+	public void saveAllTables(List<Table> processedTables) {
 		for (Table t : processedTables) {
 			// logger.info(t);
 			mongoTemplate.save(t);
 		}
 	}
+
+	public void saveSchemaDetails(SchemaDetails schemaDetails) {
+		if (schemaDetails != null) {
+			mongoTemplate.save(schemaDetails);
+		}
+	}
+
 }
