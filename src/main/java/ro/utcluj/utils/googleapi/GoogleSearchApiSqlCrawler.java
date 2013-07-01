@@ -5,26 +5,23 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 
 public class GoogleSearchApiSqlCrawler {
 
-	public static void main(String[] args) {
-		List<String> linkList = new ArrayList<String>();
+	private static final String	destinationDir	= "D:\\rawSql";
 
+	public static void main(final String[] args) {
 		try {
-			initCustomGoogleSearch(linkList, 1, -1);
-			System.out.println(linkList.toString());
-		} catch (IOException e) {
+			GoogleSearchApiSqlCrawler.initCustomGoogleSearch(1, -1);
+		} catch (final IOException e) {
 			e.printStackTrace();
-		} catch (InterruptedException e) {
+		} catch (final InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public static void initCustomGoogleSearch(List<String> sqlList, int startCounter, int maxCounter)
-			throws IOException, InterruptedException {
+	public static void initCustomGoogleSearch(int startCounter, int maxCounter) throws IOException,
+			InterruptedException {
 
 		System.out.println(startCounter + " " + maxCounter);
 		String google = "https://www.googleapis.com/customsearch/v1?";
@@ -51,27 +48,16 @@ public class GoogleSearchApiSqlCrawler {
 			}
 
 			if (output.contains("\"link\": \"")) {
-				String link = output.substring(output.indexOf("\"link\": \"") + ("\"link\": \"").length(),
+				final String link = output.substring(output.indexOf("\"link\": \"") + ("\"link\": \"").length(),
 						output.indexOf("\","));
-				sqlList.add(link); // Will add the google search links
+				UrlDownload.fileDownload(link, GoogleSearchApiSqlCrawler.destinationDir);
 			}
 		}
 		conn.disconnect();
 		startCounter += 10;
-		// System.out.println(startCounter + " " + maxCounter + " " + sqlList.size());
-		// Reader reader = new InputStreamReader(conn.getInputStream());
-		// GoogleResults results = new Gson().fromJson(reader, GoogleResults.class);
-		//
-		// // Show title and URL of 1st result.
-		// System.out.println(results);
-		// System.out.println(results.getResponseData());
-		// // System.out.println(results.getResponseData().getResults().get(0).getUrl());
-		// System.out.println(url.getQuery());
 		Thread.sleep(1000);
-
 		if (startCounter < maxCounter || maxCounter == -1) {
-			initCustomGoogleSearch(sqlList, startCounter, maxCounter);
+			GoogleSearchApiSqlCrawler.initCustomGoogleSearch(startCounter, maxCounter);
 		}
 	}
-
 }
